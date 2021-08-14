@@ -106,15 +106,11 @@ def get_algo_keys():
 
 
 def get_eth_keys(filename = "eth_mnemonic.txt"):
-    IP_ADDR='3.23.118.2' #Private Ethereum
-    PORT='8545'
-    w3 = Web3(Web3.HTTPProvider('http://' + IP_ADDR + ':' + PORT))
-    w3.middleware_onion.inject(geth_poa_middleware, layer=0) #Required to work on a PoA chain (like our private network)
-    w3.eth.account.enable_unaudited_hdwallet_features()
+    w3 = Web3()
 
     # TODO: Generate or read (using the mnemonic secret) 
     # the ethereum public/private keys
-    mnemonic_secret = "chilly bite brash slim baseball quick sack support cloudy ignorant tangible invincible actually attack past hands drown work paint sparkling whispering balance absent meddle"
+    account, mnemonic_secret = Account.create_with_mnemonic()
     acct = w3.eth.account.from_mnemonic(mnemonic_secret)
     eth_pk = acct._address
     eth_sk = acct._private_key
