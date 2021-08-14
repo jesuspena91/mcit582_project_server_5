@@ -221,7 +221,7 @@ def execute_txes(txes):
 
 """ End of Helper methods"""
   
-@app.route('/address', methods=['POST'])
+@app.route('http://127.0.0.1:5002/address', methods=['POST'])
 def address():
     print('hello')
     if request.method == "POST":
