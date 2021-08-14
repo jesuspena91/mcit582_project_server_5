@@ -106,7 +106,10 @@ def get_algo_keys():
 
 
 def get_eth_keys(filename = "eth_mnemonic.txt"):
-    w3 = Web3()
+    IP_ADDR='3.23.118.2' #Private Ethereum
+    PORT='8545'
+
+    w3 = Web3(Web3.HTTPProvider('http://' + IP_ADDR + ':' + PORT))
 
     # TODO: Generate or read (using the mnemonic secret) 
     # the ethereum public/private keys
