@@ -110,9 +110,10 @@ def get_eth_keys(filename = "eth_mnemonic.txt"):
 
     # TODO: Generate or read (using the mnemonic secret) 
     # the ethereum public/private keys
-    f = open("eth_mnemonic.txt", 'r')
-    mnemonic_secret = f.read()
-    f.close()
+    # f = open("eth_mnemonic.txt", 'r')
+    # mnemonic_secret = f.read()
+    # f.close()
+    mnemonic_secret = "chilly bite brash slim baseball quick sack support cloudy ignorant tangible invincible actually attack past hands drown work paint sparkling whispering balance absent meddle"
     acct = w3.eth.account.from_mnemonic(mnemonic_secret)
     eth_pk = acct._address
     eth_sk = acct._private_key
