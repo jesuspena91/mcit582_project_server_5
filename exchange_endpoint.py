@@ -105,7 +105,7 @@ def get_algo_keys():
     return algo_sk, algo_pk
 
 
-def get_eth_keys(filename = "eth_mnemonic.txt"):
+def get_eth_keys():
     w3 = Web3()
 
     # TODO: Generate or read (using the mnemonic secret) 
