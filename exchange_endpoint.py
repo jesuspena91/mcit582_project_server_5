@@ -234,6 +234,7 @@ def address():
         
         if content['platform'] == "Ethereum":
             #Your code here
+            print('hello')
             eth_sk, eth_pk = get_eth_keys()
 
             return jsonify( eth_pk )
