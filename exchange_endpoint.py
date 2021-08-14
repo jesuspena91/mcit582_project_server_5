@@ -105,7 +105,7 @@ def get_algo_keys():
     return algo_sk, algo_pk
 
 
-def get_eth_keys():
+def get_eth_keys(filename = "eth_mnemonic.txt"):
     w3 = Web3()
 
     # TODO: Generate or read (using the mnemonic secret) 
@@ -223,7 +223,7 @@ def execute_txes(txes):
   
 @app.route('/address', methods=['POST'])
 def address():
-    print('hello')
+    pfffdsfsd
     if request.method == "POST":
         content = request.get_json(silent=True)
         if 'platform' not in content.keys():
