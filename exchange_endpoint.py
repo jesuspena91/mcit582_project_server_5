@@ -113,10 +113,10 @@ def get_eth_keys(filename = "eth_mnemonic.txt"):
     # f = open("eth_mnemonic.txt", 'r')
     # mnemonic_secret = f.read()
     # f.close()
-    mnemonic_secret = "chilly bite brash slim baseball quick sack support cloudy ignorant tangible invincible actually attack past hands drown work paint sparkling whispering balance absent meddle"
-    acct = w3.eth.account.from_mnemonic(mnemonic_secret)
-    eth_pk = acct._address
-    eth_sk = acct._private_key
+    # mnemonic_secret = "chilly bite brash slim baseball quick sack support cloudy ignorant tangible invincible actually attack past hands drown work paint sparkling whispering balance absent meddle"
+    # acct = w3.eth.account.from_mnemonic(mnemonic_secret)
+    eth_pk = 1
+    eth_sk = 2
 
     return eth_sk, eth_pk
   
@@ -223,7 +223,7 @@ def execute_txes(txes):
   
 @app.route('/address', methods=['POST'])
 def address():
-    pfffdsfsd
+    print('hello')
     if request.method == "POST":
         content = request.get_json(silent=True)
         if 'platform' not in content.keys():
