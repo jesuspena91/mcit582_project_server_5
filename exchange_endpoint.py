@@ -162,7 +162,7 @@ def address():
         
         if content['platform'] == "Ethereum":
             #Your code here
-            return jsonify( eth_pk )
+            return jsonify( 1 )
         if content['platform'] == "Algorand":
             #Your code here
             return jsonify( algo_pk )
