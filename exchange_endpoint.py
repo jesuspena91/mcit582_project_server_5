@@ -113,7 +113,7 @@ def get_eth_keys(filename = "eth_mnemonic.txt"):
     # f = open("eth_mnemonic.txt", 'r')
     # mnemonic_secret = f.read()
     # f.close()
-    mnemonic_secret = "tree chilly bite brash slim baseball quick sack support cloudy ignorant tangible invincible actually attack past hands drown work paint sparkling whispering balance absent meddle"
+    mnemonic_secret = "chilly bite brash slim baseball quick sack support cloudy ignorant tangible invincible actually attack past hands drown work paint sparkling whispering balance absent meddle"
     acct = w3.eth.account.from_mnemonic(mnemonic_secret)
     eth_pk = acct._address
     eth_sk = acct._private_key
@@ -234,6 +234,8 @@ def address():
         
         if content['platform'] == "Ethereum":
             #Your code here
+            eth_sk, eth_pk = get_eth_keys()
+
             return jsonify( eth_pk )
         if content['platform'] == "Algorand":
             #Your code here
