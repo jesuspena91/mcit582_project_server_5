@@ -16,7 +16,7 @@ import traceback
 # TODO: make sure you implement connect_to_algo, send_tokens_algo, and send_tokens_eth
 from send_tokens import connect_to_algo, connect_to_eth, send_tokens_algo, send_tokens_eth
 
-from models import Base, Order, TX, Log
+from models import Base, Order, TX
 engine = create_engine('sqlite:///orders.db')
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
@@ -90,10 +90,6 @@ def log_message(message_dict):
     msg = json.dumps(message_dict)
 
     # TODO: Add message to the Log table
-    new_log = Log( message=message_dict )
-
-    g.session.add(new_log)
-    g.session.commit()
     
     return
 
@@ -107,16 +103,9 @@ def get_algo_keys():
 
 def get_eth_keys(filename = "eth_mnemonic.txt"):
     w3 = Web3()
-
+    
     # TODO: Generate or read (using the mnemonic secret) 
     # the ethereum public/private keys
-    # f = open("eth_mnemonic.txt", 'r')
-    # mnemonic_secret = f.read()
-    # f.close()
-    # mnemonic_secret = "chilly bite brash slim baseball quick sack support cloudy ignorant tangible invincible actually attack past hands drown work paint sparkling whispering balance absent meddle"
-    # acct = w3.eth.account.from_mnemonic(mnemonic_secret)
-    eth_pk = 1
-    eth_sk = 2
 
     return eth_sk, eth_pk
   
@@ -131,68 +120,6 @@ def fill_order(order, txes=[]):
     # Note: your fill_order function is *not* required to be recursive, and it is *not* required that it return a list of transactions, 
     # but executing a group of transactions can be more efficient, and gets around the Ethereum nonce issue described in the instructions
     
-    # Check if there are any existing orders that match
-    query = (g.session.query(Order)
-              .filter(Order.filled == None)
-              .filter(Order.buy_currency == order.sell_currency)
-              .filter(Order.sell_currency == order.buy_currency)
-              .filter((Order.sell_amount/Order.buy_amount) >= (order.buy_amount/order.sell_amount))
-            )
-    
-    # Inserting order in database
-    new_order = Order( sender_pk=order.sender_pk,
-        receiver_pk=order.receiver_pk, 
-        buy_currency=order.buy_currency, 
-        sell_currency=order.sell_currency, 
-        buy_amount=order.buy_amount, 
-        sell_amount=order.sell_amount )
-    g.session.add(new_order)
-    g.session.commit()
-    
-    if query.count() > 0:
-        existing_order = query.first()
-      
-        # Set the filled field to be the current timestamp on both orders
-        new_order.filled = datetime.now()
-        existing_order.filled = datetime.now()
-        g.session.commit()
-      
-        # Set counterparty_id to be the id of the other order
-        new_order.counterparty_id = existing_order.id
-        existing_order.counterparty_id = new_order.id
-        g.session.commit()
-      
-        # If one of the orders is not completely filled 
-        # (i.e. the counterparty’s sell_amount is less than buy_amount)
-        if new_order.buy_amount < existing_order.sell_amount:
-            remaining_buy = existing_order.sell_amount - new_order.buy_amount
-            remaining_sell = existing_order.buy_amount - new_order.sell_amount
-        
-            if (remaining_buy > 0  and remaining_sell > 0 and ()):
-                derived_order = Order( sender_pk=existing_order.sender_pk,
-                    receiver_pk=existing_order.receiver_pk, 
-                    buy_currency=existing_order.buy_currency, 
-                    sell_currency=existing_order.sell_currency, 
-                    buy_amount=remaining_sell, 
-                    sell_amount=remaining_buy,
-                    creator_id=existing_order.id)
-                g.session.add(derived_order)
-                g.session.commit()
-      
-        elif new_order.buy_amount > existing_order.sell_amount:
-            remaining_buy = new_order.buy_amount - existing_order.sell_amount
-            remaining_sell = new_order.sell_amount - existing_order.buy_amount
-        
-            if (remaining_buy > 0  and remaining_sell > 0):
-                derived_order = Order( sender_pk=new_order.sender_pk,
-                    receiver_pk=new_order.receiver_pk, 
-                    buy_currency=new_order.buy_currency, 
-                    sell_currency=new_order.sell_currency, 
-                    buy_amount=remaining_buy, 
-                    sell_amount=remaining_sell,
-                    creator_id=new_order.id)
-                g.session.add(derived_order)
-                g.session.commit()
     pass
   
 def execute_txes(txes):
@@ -223,7 +150,6 @@ def execute_txes(txes):
   
 @app.route('/address', methods=['POST'])
 def address():
-    print('hello')
     if request.method == "POST":
         content = request.get_json(silent=True)
         if 'platform' not in content.keys():
@@ -235,9 +161,6 @@ def address():
         
         if content['platform'] == "Ethereum":
             #Your code here
-            print('hello')
-            eth_sk, eth_pk = get_eth_keys()
-
             return jsonify( eth_pk )
         if content['platform'] == "Algorand":
             #Your code here
@@ -271,74 +194,26 @@ def trade():
             return jsonify( False )
         
         # Your code here
+        
         # 1. Check the signature
+        
         # 2. Add the order to the table
+        
         # 3a. Check if the order is backed by a transaction equal to the sell_amount (this is new)
+
         # 3b. Fill the order (as in Exchange Server II) if the order is valid
+        
         # 4. Execute the transactions
+        
         # If all goes well, return jsonify(True). else return jsonify(False)
-
-        result = False #Should only be true if signature validates
-        sig = content['sig']
-        payload = content['payload']
-        payload_str = json.dumps(payload)
-
-        if payload['platform'] == 'Ethereum':
-            # Generating Ethereum account
-            eth_account.Account.enable_unaudited_hdwallet_features()
-            acct, mnemonic = eth_account.Account.create_with_mnemonic()
-            eth_pk = acct.address
-            eth_sk = acct.key
-
-            eth_encoded_msg = eth_account.messages.encode_defunct(text=payload_str)
-            if eth_account.Account.recover_message(eth_encoded_msg,signature=content['sig']) == payload['sender_pk']:
-                result = True
-        
-        elif payload['platform']  == 'Algorand':
-            print('algorand')
-            if algosdk.util.verify_bytes(payload_str.encode('utf-8'),content['sig'],payload['sender_pk']):
-                result = True
-        
-        if result == True:
-            new_order = Order( sender_pk=payload['sender_pk'],
-                receiver_pk=payload['receiver_pk'], 
-                buy_currency=payload['buy_currency'], 
-                sell_currency=payload['sell_currency'], 
-                buy_amount=payload['buy_amount'], 
-                sell_amount=payload['sell_amount'],
-                signature=content['sig'] )
-            fill_order(new_order)
-            g.session.add(new_order)
-            g.session.commit()
-        else:
-            log_message(json.dumps(payload))
-
-        return jsonify( True )
+        return jsonify(True)
 
 @app.route('/order_book')
 def order_book():
+    fields = [ "buy_currency", "sell_currency", "buy_amount", "sell_amount", "signature", "tx_id", "receiver_pk" ]
+    
     # Same as before
-    data = []
-    
-    query = (g.session.query(Order).all())
-
-    for order in query:
-        temp_dict = {}
-
-        temp_dict['sender_pk'] = order.sender_pk
-        temp_dict['receiver_pk'] = order.receiver_pk
-        temp_dict['buy_currency'] = order.buy_currency
-        temp_dict['sell_currency'] = order.sell_currency
-        temp_dict['buy_amount'] = order.buy_amount
-        temp_dict['sell_amount'] = order.sell_amount
-        temp_dict['signature'] = order.signature
-
-        data.append(temp_dict)
-        g.session.commit()
-    
-    reponse = {'data': data}
-
-    return jsonify(reponse)
+    pass
 
 if __name__ == '__main__':
     app.run(port='5002')
