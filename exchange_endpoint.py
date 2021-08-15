@@ -5,6 +5,7 @@ from flask import jsonify
 import json
 import eth_account
 import algosdk
+from algosdk import mnemonic
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import load_only
@@ -101,19 +102,20 @@ def get_algo_keys():
     
     # TODO: Generate or read (using the mnemonic secret) 
     # the algorand public/private keys
+    mnemonic_secret = "unusual swift credit scheme cricket fence electric advice moral abstract task photo nuclear tree saddle vivid science pioneer pledge hour top verify satisfy ability palace"    
+    algo_sk = mnemonic.to_private_key(mnemonic_secret)
+    algo_pk = mnemonic.to_public_key(mnemonic_secret)
     
     return algo_sk, algo_pk
 
 
 def get_eth_keys(filename = "eth_mnemonic.txt"):
-    w3 = Web3()
+    w3 = connect_to_eth()
 
     # TODO: Generate or read (using the mnemonic secret) 
     # the ethereum public/private keys
-    # f = open("eth_mnemonic.txt", 'r')
-    # mnemonic_secret = f.read()
-    # f.close()
-    mnemonic_secret = "chilly bite brash slim baseball quick sack support cloudy ignorant tangible invincible actually attack past hands drown work paint sparkling whispering balance absent meddle"
+    mnemonic_secret = "jealous expect hundred young unlock disagree major siren surge acoustic machine catalog"
+
     acct = w3.eth.account.from_mnemonic(mnemonic_secret)
     eth_pk = acct._address
     eth_sk = acct._private_key
@@ -145,7 +147,8 @@ def fill_order(order, txes=[]):
         buy_currency=order.buy_currency, 
         sell_currency=order.sell_currency, 
         buy_amount=order.buy_amount, 
-        sell_amount=order.sell_amount )
+        sell_amount=order.sell_amount,
+        tx_id=order.tx_id )
     g.session.add(new_order)
     g.session.commit()
     
@@ -175,7 +178,8 @@ def fill_order(order, txes=[]):
                     sell_currency=existing_order.sell_currency, 
                     buy_amount=remaining_sell, 
                     sell_amount=remaining_buy,
-                    creator_id=existing_order.id)
+                    creator_id=existing_order.id,
+                    tx_id=existing_order.tx_id)
                 g.session.add(derived_order)
                 g.session.commit()
       
@@ -190,7 +194,8 @@ def fill_order(order, txes=[]):
                     sell_currency=new_order.sell_currency, 
                     buy_amount=remaining_buy, 
                     sell_amount=remaining_sell,
-                    creator_id=new_order.id)
+                    creator_id=new_order.id,
+                    tx_id=new_order.tx_id)
                 g.session.add(derived_order)
                 g.session.commit()
     pass
@@ -223,9 +228,7 @@ def execute_txes(txes):
   
 @app.route('/address', methods=['POST'])
 def address():
-    print('hello')
     if request.method == "POST":
-        print('hello')
         content = request.get_json(silent=True)
         if 'platform' not in content.keys():
             print( f"Error: no platform provided" )
@@ -236,19 +239,21 @@ def address():
         
         if content['platform'] == "Ethereum":
             #Your code here
-            print('hello')
             eth_sk, eth_pk = get_eth_keys()
 
             return jsonify( eth_pk )
         if content['platform'] == "Algorand":
             #Your code here
+            algo_sk, algo_pk = get_algo_keys()
+
             return jsonify( algo_pk )
 
 @app.route('/trade', methods=['POST'])
 def trade():
     print( "In trade", file=sys.stderr )
     connect_to_blockchains()
-    get_keys()
+    eth_sk, eth_pk = get_eth_keys()
+    algo_sk, algo_pk = get_algo_keys()
     if request.method == "POST":
         content = request.get_json(silent=True)
         columns = [ "buy_currency", "sell_currency", "buy_amount", "sell_amount", "platform", "tx_id", "receiver_pk"]
@@ -286,17 +291,12 @@ def trade():
 
         if payload['platform'] == 'Ethereum':
             # Generating Ethereum account
-            eth_account.Account.enable_unaudited_hdwallet_features()
-            acct, mnemonic = eth_account.Account.create_with_mnemonic()
-            eth_pk = acct.address
-            eth_sk = acct.key
 
             eth_encoded_msg = eth_account.messages.encode_defunct(text=payload_str)
             if eth_account.Account.recover_message(eth_encoded_msg,signature=content['sig']) == payload['sender_pk']:
                 result = True
         
         elif payload['platform']  == 'Algorand':
-            print('algorand')
             if algosdk.util.verify_bytes(payload_str.encode('utf-8'),content['sig'],payload['sender_pk']):
                 result = True
         
@@ -307,7 +307,8 @@ def trade():
                 sell_currency=payload['sell_currency'], 
                 buy_amount=payload['buy_amount'], 
                 sell_amount=payload['sell_amount'],
-                signature=content['sig'] )
+                signature=content['sig'],
+                tx_id=content['tx_id'] )
             fill_order(new_order)
             g.session.add(new_order)
             g.session.commit()
@@ -333,6 +334,7 @@ def order_book():
         temp_dict['buy_amount'] = order.buy_amount
         temp_dict['sell_amount'] = order.sell_amount
         temp_dict['signature'] = order.signature
+        temp_dict['tx_id'] = order.tx_id
 
         data.append(temp_dict)
         g.session.commit()
